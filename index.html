@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FOCUS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== MENU ===================== -->
+  <section class="screen active" id="menuScreen">
+    <div class="eyebrow">Suivi visuel · Mémoire · Concentration</div>
+    <h1>FOCUS<span class="dot">.</span></h1>
+    <div class="sub">Repère le point. Suis le mouvement. Ne le perds pas de vue.</div>
+    <div class="menu-stack">
+      <button class="btn primary" onclick="goTo('configScreen')">▶ Jouer Solo</button>
+      <button class="btn" onclick="goTo('onlineMenuScreen')">🌍 Jouer en ligne</button>
+      <button class="btn ghost" onclick="goTo('settingsScreen')">⚙ Paramètres</button>
+      <button class="btn ghost" onclick="goTo('rulesScreen')">❓ Règles</button>
+    </div>
+    <div class="signature">by twagirumukiza</div>
+  </section>
+
+  <!-- ===================== CONFIG SOLO ===================== -->
+  <section class="screen" id="configScreen">
+    <button class="btn ghost back-btn" onclick="goTo('menuScreen')">← Retour</button>
+    <div class="eyebrow">Configuration</div>
+    <h2>Mode Solo</h2>
+    <div class="config-box">
+      <div class="field"><span class="field-label">Nombre de points</span><div class="opts" id="optCount"></div></div>
+      <div class="field"><span class="field-label">Vitesse</span><div class="opts" id="optSpeed"></div></div>
+      <div class="field"><span class="field-label">Temps avant disparition du jaune</span><div class="opts" id="optTime"></div></div>
+      <button class="btn primary big" onclick="startSoloRound()">Commencer</button>
+    </div>
+  </section>
+
+  <!-- ===================== MENU EN LIGNE ===================== -->
+  <section class="screen" id="onlineMenuScreen">
+    <button class="btn ghost back-btn" onclick="goTo('menuScreen')">← Retour</button>
+    <div class="eyebrow">Multijoueur</div>
+    <h2>Jouer en ligne</h2>
+    <div class="sub">Mode Survie : à chaque manche, la difficulté augmente. Le dernier joueur en vie gagne.</div>
+    <div class="menu-stack">
+      <button class="btn primary" onclick="refreshHostConfigUI(); goTo('hostConfigScreen')">➕ Créer une salle</button>
+      <button class="btn" onclick="refreshJoinUI(); goTo('joinScreen')">🔑 Rejoindre une salle</button>
+    </div>
+  </section>
+
+  <!-- ===================== CONFIG HÔTE ===================== -->
+  <section class="screen" id="hostConfigScreen">
+    <button class="btn ghost back-btn" onclick="goTo('onlineMenuScreen')">← Retour</button>
+    <div class="eyebrow">Créer une salle</div>
+    <h2>Réglages de départ</h2>
+    <div class="config-box">
+      <div class="field"><span class="field-label">Ton pseudo</span><input type="text" id="hcName" maxlength="16" placeholder="PSEUDO"></div>
+      <div class="field"><span class="field-label">Nombre de points de départ</span><div class="opts" id="hcCount"></div></div>
+      <div class="field"><span class="field-label">Vitesse de départ</span><div class="opts" id="hcSpeed"></div></div>
+      <div class="field"><span class="field-label">Minuteur d'observation (2 à 10 s)</span><div id="hcObserve"></div></div>
+      <div class="field"><span class="field-label">Temps pour répondre une fois figé (3 à 5 s)</span><div id="hcAnswer"></div></div>
+      <button class="btn primary big" id="hcCreateBtn" onclick="onCreateRoomClick()">Créer la salle</button>
+    </div>
+  </section>
+
+  <!-- ===================== REJOINDRE ===================== -->
+  <section class="screen" id="joinScreen">
+    <button class="btn ghost back-btn" onclick="goTo('onlineMenuScreen')">← Retour</button>
+    <div class="eyebrow">Rejoindre</div>
+    <h2>Entrer un salon</h2>
+    <div class="config-box">
+      <div class="field"><span class="field-label">Ton pseudo</span><input type="text" id="jName" maxlength="16" placeholder="PSEUDO"></div>
+      <div class="field"><span class="field-label">Code du salon</span><input type="text" id="jCode" maxlength="5" placeholder="XXXXX"></div>
+      <button class="btn primary big" id="jJoinBtn" onclick="onJoinRoomClick()">Rejoindre</button>
+    </div>
+  </section>
+
+  <!-- ===================== SALON D'ATTENTE ===================== -->
+  <section class="screen" id="lobbyScreen">
+    <div class="eyebrow">Salon</div>
+    <div class="room-code" id="lobbyCode">—</div>
+    <button class="btn ghost" id="copyCodeBtn" onclick="copyRoomCode()" style="margin-bottom:20px;">📋 Copier le code</button>
+    <div class="sub" id="lobbyConfigSummary" style="margin-bottom:18px;"></div>
+    <div class="player-list" id="lobbyPlayerList"></div>
+    <button class="btn primary big" id="lobbyStartBtn" onclick="hostStartGame()" style="display:none;">▶ Démarrer la partie</button>
+    <div class="sub" id="lobbyWaitHint" style="display:none;">En attente que l'hôte démarre la partie…</div>
+    <div class="chat-box">
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Message…" maxlength="120" onkeydown="if(event.key==='Enter')onChatSend()">
+        <button class="btn ghost" onclick="onChatSend()">Envoyer</button>
+      </div>
+    </div>
+    <button class="btn danger" style="margin-top:20px;" onclick="leaveRoom()">🚪 Quitter le salon</button>
+  </section>
+
+  <!-- ===================== JEU (solo + en ligne) ===================== -->
+  <section class="screen" id="gameScreen">
+    <div class="top-links">
+      <button onclick="goTo('settingsScreen')">⚙ Réglages</button>
+      <button onclick="confirmQuit()">🚪 Quitter</button>
+    </div>
+    <div class="hud">
+      <div><span id="modeTag">SOLO</span> · Points <b id="hudCount">–</b></div>
+      <div>Manche <b id="hudRound">1</b></div>
+      <div><b id="hudExtra">–</b></div>
+    </div>
+    <div class="status-line" id="statusLine">Préparation…</div>
+    <canvas id="stage" width="560" height="560"></canvas>
+
+    <!-- Solo : bouton STOP -->
+    <div class="stop-wrap" id="stopWrap">
+      <button id="stopBtn" onclick="onSoloStop()">STOP</button>
+    </div>
+
+    <!-- En ligne : minuteur automatique, pas de bouton -->
+    <div class="timer-wrap" id="timerWrap" style="display:none;">
+      <div class="timer-ring" id="timerRing">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle class="bg" cx="28" cy="28" r="24"></circle>
+          <circle class="fg" id="timerFg" cx="28" cy="28" r="24"></circle>
+        </svg>
+        <div class="timer-num" id="timerNum">–</div>
+      </div>
+      <div class="timer-label" id="timerLabel">Observe</div>
+    </div>
+
+    <div class="player-list" id="gamePlayerList" style="max-width:400px;"></div>
+  </section>
+
+  <!-- ===================== RESULTAT SOLO ===================== -->
+  <section class="screen" id="resultScreen">
+    <div class="result-word" id="resultWord">—</div>
+    <div class="sub" id="resultSub" style="margin-bottom:0;"></div>
+    <div class="stats-row">
+      <div class="stat"><b id="statPlayed">0</b><span>Parties</span></div>
+      <div class="stat"><b id="statWins">0</b><span>Victoires</span></div>
+      <div class="stat"><b id="statAcc">0%</b><span>Précision</span></div>
+      <div class="stat"><b id="statBest">0</b><span>Meilleure série</span></div>
+    </div>
+    <div class="menu-stack">
+      <button class="btn primary" onclick="startSoloRound()">🔄 Rejouer</button>
+      <button class="btn ghost" onclick="goTo('configScreen')">⚙ Changer les réglages</button>
+      <button class="btn ghost" onclick="goTo('menuScreen')">🏠 Menu</button>
+    </div>
+  </section>
+
+  <!-- ===================== FIN DE PARTIE EN LIGNE ===================== -->
+  <section class="screen" id="gameOverScreen">
+    <div class="eyebrow">Partie terminée</div>
+    <h2 id="gameOverTitle">—</h2>
+    <div class="classement-list" id="classementList"></div>
+    <div class="menu-stack">
+      <button class="btn primary" id="gameOverRestartBtn" onclick="hostStartGame()" style="display:none;">🔄 Relancer une partie</button>
+      <button class="btn ghost" onclick="leaveRoom()">🏠 Menu</button>
+    </div>
+  </section>
+
+  <!-- ===================== PARAMETRES ===================== -->
+  <section class="screen" id="settingsScreen">
+    <button class="btn ghost back-btn" onclick="goTo('menuScreen')">← Retour</button>
+    <div class="eyebrow">Réglages</div>
+    <h2>Paramètres</h2>
+    <div class="settings-box">
+      <div class="toggle-row">
+        <div><div class="t-label">🎵 Musique</div><div class="t-hint">Ambiance sonore continue</div></div>
+        <div class="switch" id="swMusic" onclick="toggleSetting('music')"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="t-label">🔊 Effets sonores</div><div class="t-hint">Signal, minuteur, victoire, défaite</div></div>
+        <div class="switch" id="swSfx" onclick="toggleSetting('sfx')"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="t-label">📳 Vibration</div><div class="t-hint">Retour haptique (mobile)</div></div>
+        <div class="switch" id="swVibration" onclick="toggleSetting('vibration')"></div>
+      </div>
+      <div class="toggle-row" style="border-bottom:none;">
+        <div><div class="t-label">⛶ Plein écran</div><div class="t-hint">Immersion sans barre de navigateur</div></div>
+        <div class="switch" id="swFullscreen" onclick="toggleFullscreen()"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REGLES ===================== -->
+  <section class="screen" id="rulesScreen">
+    <button class="btn ghost back-btn" onclick="goTo('menuScreen')">← Retour</button>
+    <div class="eyebrow">Comment jouer</div>
+    <h2>Règles</h2>
+    <div class="rules-box">
+      <b>Solo</b>
+      <ol>
+        <li>Un point devient <b>jaune</b>, puis tous les points se mettent à bouger.</li>
+        <li>Le jaune redevient blanc après quelques secondes — reste concentré.</li>
+        <li>Appuie sur <b>STOP</b> quand tu es prêt, puis clique sur le bon point.</li>
+      </ol>
+      <b>En ligne — Mode Survie</b>
+      <ol>
+        <li>Le créateur du salon choisit le nombre de points, la vitesse de départ, un <b>minuteur d'observation</b> (2 à 10 s) et un <b>temps de réponse</b> (3 à 5 s).</li>
+        <li>Une fois le minuteur écoulé, les points se figent <b>automatiquement</b> pour tout le monde — il n'y a pas de bouton STOP.</li>
+        <li>Chaque joueur doit alors cliquer sur le bon point avant la fin du temps de réponse.</li>
+        <li>Une erreur ou une absence de réponse à temps élimine le joueur. La partie continue.</li>
+        <li>À chaque manche, le nombre de points et la vitesse augmentent, jusqu'à ce qu'il ne reste qu'un seul joueur : le vainqueur.</li>
+      </ol>
+    </div>
+  </section>
+
+</div>
+
+<!-- Firebase (compat SDK — simple à intégrer sans outil de build) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script src="firebase/firebase-config.js"></script>
+<script src="js/config.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/solo.js"></script>
+<script src="js/online.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+function confirmQuit() {
+  if (currentRoomCode) { leaveRoom(); return; }
+  stopSoloLoop();
+  goTo('menuScreen');
+}
+</script>
+
+</body>
+</html>
