@@ -37,7 +37,7 @@ function initFirebase() {
     console.warn('Firebase SDK non chargé — vérifie firebase/firebase-config.js');
     return;
   }
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  if (!firebase.apps.length) firebase.initializeApp(window.FOCUS_FIREBASE_CONFIG);
   db = firebase.database();
   auth = firebase.auth();
 
