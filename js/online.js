@@ -343,3 +343,7 @@ function sendChatMessage(text) {
   if (!text.trim() || !roomRef) return;
   roomRef.child('chat').push({ uid: myUid, name: myName, text: text.trim(), ts: firebase.database.ServerValue.TIMESTAMP });
 }
+// Initialisation Firebase au chargement
+window.addEventListener("load", () => {
+    initFirebase();
+});
