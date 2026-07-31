@@ -62,23 +62,39 @@ function makeRoomCode() {
 }
 
 async function createRoom(hostConfig, name) {
-  myName = name || 'Hôte';
+
+  // Attendre que l'utilisateur soit connecté
+  if (!auth.currentUser) {
+    const result = await auth.signInAnonymously();
+    myUid = result.user.uid;
+  } else {
+    myUid = auth.currentUser.uid;
+  }
+
+  myName = name || "Hôte";
+
   const code = makeRoomCode();
-  const ref = db.ref('rooms/' + code);
+  const ref = db.ref("rooms/" + code);
+
   await ref.set({
     hostUid: myUid,
     createdAt: firebase.database.ServerValue.TIMESTAMP,
-    status: 'lobby',
-    config: hostConfig, // { startCount, startSpeedIdx, observeSec, answerSec }
+    status: "lobby",
+    config: hostConfig,
     round: 0,
     players: {
-      [myUid]: { name: myName, isHost: true, joinedAt: firebase.database.ServerValue.TIMESTAMP, alive: true }
+      [myUid]: {
+        name: myName,
+        isHost: true,
+        joinedAt: firebase.database.ServerValue.TIMESTAMP,
+        alive: true
+      }
     }
   });
+
   await joinRoomInternal(code);
   return code;
 }
-
 async function joinRoom(code, name) {
   code = code.trim().toUpperCase();
   myName = name || 'Joueur';
